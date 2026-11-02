@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#75c96d">
+  <title>Pet Simulator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="gameWrap">
+    <canvas id="game" aria-label="Pet Simulator game"></canvas>
+
+    <section id="hud">
+      <div class="pill" id="worldPill">🌿 Meadow</div>
+      <div class="pill">🪙 <span id="coins">0</span></div>
+      <div class="pill">🐾 <span id="petCount">1</span>/4</div>
+    </section>
+
+    <section id="help">
+      <b>Controls</b>
+      <span>WASD · Space · right-drag camera · wheel zoom · Shift lock</span>
+      <span>Click or tap an object to send your pets.</span>
+    </section>
+
+    <section id="target" class="hidden">
+      <b id="targetName">Crate</b>
+      <div class="hp"><div id="targetFill"></div></div>
+      <small id="targetHp">0 / 0</small>
+    </section>
+
+    <button id="action" class="hidden" type="button">Hatch Egg</button>
+    <div id="toast" aria-live="polite"></div>
+
+    <div id="mobile">
+      <div id="stick"><div id="knob"></div></div>
+      <button id="jump" type="button">↑</button>
+    </div>
+  </main>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
