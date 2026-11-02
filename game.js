@@ -282,7 +282,7 @@ function respawn(now){
 let stickId=null;
 let stickCenter={x:0,y:0};
 function showStick(x,y){
- const size=118;
+ const size=150;
  stickCenter={x,y};
  stick.style.left=(x-size/2)+'px';
  stick.style.top=(y-size/2)+'px';
@@ -290,9 +290,9 @@ function showStick(x,y){
  stick.classList.add('active');
 }
 function stickMove(e){
- let dx=e.clientX-stickCenter.x,dy=e.clientY-stickCenter.y,max=39;
+ let dx=e.clientX-stickCenter.x,dy=e.clientY-stickCenter.y,max=50;
  const len=Math.hypot(dx,dy)||1;if(len>max){dx=dx/len*max;dy=dy/len*max;}
- joyX=dx/max;joyY=-dy/max;knob.style.transform='translate('+dx+'px,'+dy+'px)';
+ joyX=dx/max;joyY=dy/max;knob.style.transform='translate('+dx+'px,'+dy+'px)';
 }
 function resetStick(e){
  if(e.pointerId!==stickId)return;
