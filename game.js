@@ -116,13 +116,79 @@ const armL=box(.6,2.2,.65,0xf2c89c),armR=box(.6,2.2,.65,0xf2c89c);armL.position.
 player.position.set(0,0,7);
 
 let pets=[];
+function createAnimalPet(pet){
+ const g=new THREE.Group();
+ const color=pet.color||0xffd34d;
+ const fur=new THREE.MeshStandardMaterial({color,roughness:.78});
+ const dark=new THREE.MeshStandardMaterial({color:0x241d19,roughness:.95});
+ const eyeMat=new THREE.MeshBasicMaterial({color:0x111111});
+ const n=(pet.name||'').toLowerCase();
+ const type=n.includes('bunny')?'bunny':n.includes('fox')?'fox':n.includes('cat')?'cat':n.includes('dragon')?'dragon':'dog';
+
+ const body=new THREE.Mesh(new THREE.CapsuleGeometry(.58,1.25,8,14),fur);
+ body.rotation.x=Math.PI/2; body.position.set(0,1.15,.08); body.castShadow=true; g.add(body);
+
+ const chest=new THREE.Mesh(new THREE.SphereGeometry(.56,14,12),fur);
+ chest.scale.set(1.02,.92,1.08); chest.position.set(0,1.15,-.56); chest.castShadow=true; g.add(chest);
+
+ const headSize=type==='dog'?.68:type==='bunny'?.61:.64;
+ const head=new THREE.Mesh(new THREE.SphereGeometry(headSize,16,14),fur);
+ head.position.set(0,1.55,-1.22); head.castShadow=true; g.add(head);
+
+ const snout=new THREE.Mesh(new THREE.SphereGeometry(type==='dog'?.31:.23,12,10),fur);
+ snout.scale.set(.9,.72,type==='dog'?1.15:.9); snout.position.set(0,1.38,-1.78); snout.castShadow=true; g.add(snout);
+ const nose=new THREE.Mesh(new THREE.SphereGeometry(.085,8,6),dark);
+ nose.position.set(0,1.4,-2.02); g.add(nose);
+
+ for(const x of[-.23,.23]){
+   const eye=new THREE.Mesh(new THREE.SphereGeometry(.065,8,6),eyeMat);
+   eye.position.set(x,1.62,-1.78); g.add(eye);
+ }
+
+ if(type==='bunny'){
+   for(const x of[-.22,.22]){
+     const ear=new THREE.Mesh(new THREE.CapsuleGeometry(.10,.65,6,8),fur);
+     ear.position.set(x,2.37,-1.15); ear.rotation.z=x>0?-.08:.08; ear.castShadow=true; g.add(ear);
+   }
+ }else if(type==='dog'){
+   for(const x of[-.47,.47]){
+     const ear=new THREE.Mesh(new THREE.SphereGeometry(.19,10,8),fur);
+     ear.scale.set(.8,1.55,.8); ear.position.set(x,1.75,-1.15); ear.castShadow=true; g.add(ear);
+   }
+ }else{
+   for(const x of[-.35,.35]){
+     const ear=new THREE.Mesh(new THREE.ConeGeometry(.20,.48,5),fur);
+     ear.position.set(x,2.03,-1.12); ear.rotation.z=x>0?-.16:.16; ear.castShadow=true; g.add(ear);
+   }
+ }
+
+ const legGeo=new THREE.CylinderGeometry(.16,.20,.95,8);
+ for(const [x,z] of[[-.43,-.55],[.43,-.55],[-.43,.55],[.43,.55]]){
+   const leg=new THREE.Mesh(legGeo,fur); leg.position.set(x,.55,z); leg.castShadow=true; g.add(leg);
+   const paw=new THREE.Mesh(new THREE.SphereGeometry(.21,10,8),fur); paw.scale.set(1.05,.62,1.25); paw.position.set(x,.12,z-.08); paw.castShadow=true; g.add(paw);
+ }
+
+ if(type==='bunny'){
+   const tail=new THREE.Mesh(new THREE.SphereGeometry(.28,10,8),fur);
+   tail.position.set(0,1.16,1.25); tail.castShadow=true; tail.userData.tail=true; g.add(tail);
+ }else{
+   const tail=new THREE.Mesh(new THREE.CylinderGeometry(.055,.10,type==='dog'?.95:1.2,8),fur);
+   tail.position.set(0,1.48,1.28); tail.rotation.x=type==='dog'?-.85:-1.05; tail.castShadow=true; tail.userData.tail=true; g.add(tail);
+ }
+ if(type==='dragon'){
+   for(const x of[-.48,.48]){
+     const wing=new THREE.Mesh(new THREE.ConeGeometry(.42,.9,3),fur);
+     wing.position.set(x,1.65,.15); wing.rotation.z=x>0?-.75:.75; wing.rotation.x=.45; wing.castShadow=true; g.add(wing);
+   }
+ }
+ g.scale.setScalar(.95);
+ return g;
+}
 function rebuildPets(){
  pets.forEach(p=>scene.remove(p.group));pets=[];
  const equipped=[...state.pets].sort((a,b)=>b.power-a.power).slice(0,4);
  equipped.forEach((p,i)=>{
-   const g=new THREE.Group(),body=box(1.8,1.45,2,p.color||0xffd34d);body.position.y=1.15;g.add(body);
-   const eyeMat=new THREE.MeshStandardMaterial({color:0x161616});
-   for(const sx of[-.45,.45]){const e=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),eyeMat);e.position.set(sx,1.4,1.02);g.add(e);}
+   const g=createAnimalPet(p);
    scene.add(g);pets.push({group:g,data:p,i});
  });
  petCountEl.textContent=equipped.length;
@@ -214,30 +280,60 @@ function respawn(now){
 }
 
 let stickId=null;
-function stickMove(e){
- const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=38,len=Math.hypot(dx,dy)||1,s=Math.min(1,max/len);
- joyX=dx*s/max;joyY=dy*s/max;knob.style.transform='translate('+(dx*s)+'px,'+(dy*s)+'px)';
+let stickCenter={x:0,y:0};
+function showStick(x,y){
+ const size=118;
+ stickCenter={x,y};
+ stick.style.left=(x-size/2)+'px';
+ stick.style.top=(y-size/2)+'px';
+ stick.style.bottom='auto';
+ stick.classList.add('active');
 }
-stick.addEventListener('pointerdown',e=>{stickId=e.pointerId;stick.setPointerCapture(e.pointerId);stickMove(e);});
-stick.addEventListener('pointermove',e=>{if(e.pointerId===stickId)stickMove(e);});
-function resetStick(e){if(e.pointerId===stickId){stickId=null;joyX=joyY=0;knob.style.transform='translate(0,0)';}}
-stick.addEventListener('pointerup',resetStick);stick.addEventListener('pointercancel',resetStick);
+function stickMove(e){
+ let dx=e.clientX-stickCenter.x,dy=e.clientY-stickCenter.y,max=39;
+ const len=Math.hypot(dx,dy)||1;if(len>max){dx=dx/len*max;dy=dy/len*max;}
+ joyX=dx/max;joyY=-dy/max;knob.style.transform='translate('+dx+'px,'+dy+'px)';
+}
+function resetStick(e){
+ if(e.pointerId!==stickId)return;
+ stickId=null;joyX=joyY=0;knob.style.transform='translate(0,0)';stick.classList.remove('active');
+}
+function touchStartsJoystick(e){
+ return e.pointerType==='touch'&&e.clientX<innerWidth*.46&&stickId===null;
+}
+canvas.addEventListener('pointerdown',e=>{
+ if(!touchStartsJoystick(e))return;
+ stickId=e.pointerId;showStick(e.clientX,e.clientY);stickMove(e);canvas.setPointerCapture?.(e.pointerId);
+});
+canvas.addEventListener('pointermove',e=>{if(e.pointerType==='touch'&&e.pointerId===stickId)stickMove(e);});
+canvas.addEventListener('pointerup',e=>{if(e.pointerType==='touch'&&e.pointerId===stickId)resetStick(e);});
+canvas.addEventListener('pointercancel',e=>{if(e.pointerType==='touch'&&e.pointerId===stickId)resetStick(e);});
 jumpBtn.addEventListener('pointerdown',e=>{e.preventDefault();jump();});
 
 let touchCam=null,touchMoved=false,touchStartX=0,touchStartY=0;
 canvas.addEventListener('pointerdown',e=>{
- if(e.pointerType!=='touch')return;
+ if(e.pointerType!=='touch'||e.pointerId===stickId)return;
  touchCam=e.pointerId;touchMoved=false;touchStartX=lastX=e.clientX;touchStartY=lastY=e.clientY;canvas.setPointerCapture(e.pointerId);
 });
 canvas.addEventListener('pointermove',e=>{
- if(e.pointerType!=='touch'||e.pointerId!==touchCam)return;
+ if(e.pointerType!=='touch'||e.pointerId!==touchCam||e.pointerId===stickId)return;
  const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.hypot(e.clientX-touchStartX,e.clientY-touchStartY)>10)touchMoved=true;
  camYaw-=dx*.007;camPitch=Math.max(.08,Math.min(1.05,camPitch+dy*.005));lastX=e.clientX;lastY=e.clientY;
 });
 canvas.addEventListener('pointerup',e=>{
- if(e.pointerType!=='touch'||e.pointerId!==touchCam)return;
+ if(e.pointerType!=='touch'||e.pointerId!==touchCam||e.pointerId===stickId)return;
  if(!touchMoved)pick(e.clientX,e.clientY);touchCam=null;
 });
+
+
+let lastTouchEnd=0;
+document.addEventListener('touchend',e=>{
+ const now=Date.now();
+ if(now-lastTouchEnd<350)e.preventDefault();
+ lastTouchEnd=now;
+},{passive:false});
+document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
 
 let last=performance.now();
 function loop(now){
@@ -273,6 +369,8 @@ function loop(now){
    }
    p.group.position.lerp(dest,1-Math.pow(.01,dt));p.group.position.y=.2+Math.sin(now*.004+i)*.22;
    if(atk)p.group.lookAt(atk.x,p.group.position.y,atk.z);else p.group.rotation.y=player.rotation.y;
+   const tail=p.group.children.find(c=>c.userData&&c.userData.tail);
+   if(tail)tail.rotation.z=Math.sin(now*.012+i)*.28;
  });
  eggs.forEach((e,i)=>{e.group.rotation.y+=dt*.65;e.group.children[1].position.y=3.2+Math.sin(now*.002+i)*.18;});
  updateNearby();attack(dt,now);respawn(now);updateHUD();renderer.render(scene,camera);
