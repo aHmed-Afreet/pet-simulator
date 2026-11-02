@@ -27,3 +27,23 @@ button{font:inherit}
   #stick.active{opacity:1;transform:scale(1)}#knob{position:absolute;left:50%;top:50%;width:68px;height:68px;margin:-34px 0 0 -34px;border-radius:50%;background:rgba(255,255,255,.62);border:3px solid rgba(255,255,255,.85);pointer-events:none}
   #jump{position:absolute;right:max(26px,env(safe-area-inset-right));bottom:max(32px,env(safe-area-inset-bottom));width:74px;height:74px;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:rgba(35,35,42,.48);color:#fff;font-size:30px;font-weight:900;pointer-events:auto;touch-action:none}
 }
+#petsBtn{position:absolute;right:18px;top:max(72px,calc(env(safe-area-inset-top) + 58px));z-index:18;min-width:104px;min-height:46px;border:1px solid rgba(255,255,255,.2);border-radius:15px;background:rgba(20,24,32,.88);color:#fff;font-weight:900;box-shadow:0 7px 22px rgba(0,0,0,.24);backdrop-filter:blur(8px)}
+#petPanel{position:absolute;z-index:40;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,92%);max-height:min(76%,680px);overflow:hidden;background:rgba(18,22,30,.97);border:1px solid rgba(255,255,255,.18);border-radius:22px;box-shadow:0 18px 60px rgba(0,0,0,.48);padding:18px;touch-action:pan-y}
+.petHeader{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.petHeader h2{margin:0 0 3px;font-size:24px}.petHeader small{opacity:.72;font-weight:700}
+#closePets{width:46px;height:46px;border:0;border-radius:14px;background:rgba(255,255,255,.1);color:#fff;font-size:30px;line-height:1}
+.petActions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:13px}
+.petActions button{min-height:44px;border:0;border-radius:13px;padding:0 15px;color:#fff;font-weight:900;background:#2f80ed}
+#unequipAll{background:rgba(255,255,255,.11)}
+#petList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;overflow-y:auto;max-height:480px;padding:2px 3px 8px;touch-action:pan-y}
+.petCard{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:11px;align-items:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.11);border-radius:16px;padding:11px}
+.petCard.equipped{border-color:#68df78;background:rgba(99,229,111,.10)}
+.petIcon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:25px;background:rgba(255,255,255,.1)}
+.petInfo{min-width:0}.petInfo b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.petInfo small{opacity:.72}
+.petToggle{min-width:82px;min-height:40px;border:0;border-radius:11px;padding:0 10px;font-weight:900;color:#fff;background:#2f80ed}
+.petCard.equipped .petToggle{background:#d75858}
+@media (max-width:650px){
+ #petsBtn{right:12px;top:max(64px,calc(env(safe-area-inset-top) + 52px));min-width:88px}
+ #petPanel{width:94%;max-height:78%;padding:14px}
+ #petList{grid-template-columns:1fr;max-height:430px}
+}
