@@ -30,6 +30,23 @@
     </section>
 
     <button id="action" class="hidden" type="button">Hatch Egg</button>
+    <button id="petsBtn" type="button">🐾 Pets</button>
+
+    <section id="petPanel" class="hidden" aria-label="Pet Manager">
+      <div class="petHeader">
+        <div>
+          <h2>Pet Manager</h2>
+          <small id="petSummary">0 owned · 0/4 equipped</small>
+        </div>
+        <button id="closePets" type="button" aria-label="Close pet manager">×</button>
+      </div>
+      <div class="petActions">
+        <button id="autoEquip" type="button">⚡ Equip Best</button>
+        <button id="unequipAll" type="button">Unequip All</button>
+      </div>
+      <div id="petList"></div>
+    </section>
+
     <div id="toast" aria-live="polite"></div>
 
     <div id="mobile">
