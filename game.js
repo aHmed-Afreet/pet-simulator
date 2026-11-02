@@ -4,6 +4,7 @@ const $=s=>document.querySelector(s);
 const canvas=$('#game'), worldPill=$('#worldPill'), coinsEl=$('#coins'), petCountEl=$('#petCount');
 const targetBox=$('#target'), targetName=$('#targetName'), targetFill=$('#targetFill'), targetHp=$('#targetHp');
 const actionBtn=$('#action'), toast=$('#toast'), help=$('#help'), stick=$('#stick'), knob=$('#knob'), jumpBtn=$('#jump');
+const petsBtn=$('#petsBtn'),petPanel=$('#petPanel'),closePets=$('#closePets'),petList=$('#petList'),petSummary=$('#petSummary'),autoEquip=$('#autoEquip'),unequipAll=$('#unequipAll');
 
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -32,11 +33,17 @@ const worlds=[
 {name:'Space',icon:'🌌',ground:0x403d79,accent:0x927cff,sky:0x12152f,unlock:14500,egg:6200,power:52,hp:1450,reward:1100}
 ];
 
-const state={coins:0,unlocked:0,pets:[{name:'Buddy',power:1,color:0xffd34d}]};
+const makePetId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const state={coins:0,unlocked:0,pets:[{id:'starter-buddy',name:'Buddy',power:1,color:0xffd34d}],equipped:['starter-buddy']};
 try{
  const s=JSON.parse(localStorage.getItem('pet-sim-save')||'null');
  if(s&&Number.isFinite(s.coins)&&Number.isInteger(s.unlocked)&&Array.isArray(s.pets)){
-   state.coins=Math.max(0,s.coins); state.unlocked=Math.min(4,Math.max(0,s.unlocked)); state.pets=s.pets.slice(0,40);
+   state.coins=Math.max(0,s.coins);
+   state.unlocked=Math.min(4,Math.max(0,s.unlocked));
+   state.pets=s.pets.slice(0,40).map(p=>({...p,id:p.id||makePetId()}));
+   const validIds=new Set(state.pets.map(p=>p.id));
+   if(Array.isArray(s.equipped)) state.equipped=s.equipped.filter(id=>validIds.has(id)).slice(0,4);
+   else state.equipped=[...state.pets].sort((a,b)=>b.power-a.power).slice(0,4).map(p=>p.id);
  }
 }catch{}
 const save=()=>localStorage.setItem('pet-sim-save',JSON.stringify(state));
@@ -184,16 +191,59 @@ function createAnimalPet(pet){
  g.scale.setScalar(.95);
  return g;
 }
+function equippedPets(){
+ return state.equipped.map(id=>state.pets.find(p=>p.id===id)).filter(Boolean).slice(0,4);
+}
+function petEmoji(name=''){
+ const n=name.toLowerCase();
+ if(n.includes('cat'))return '🐱';
+ if(n.includes('bunny'))return '🐰';
+ if(n.includes('fox'))return '🦊';
+ if(n.includes('dragon'))return '🐉';
+ return '🐶';
+}
 function rebuildPets(){
  pets.forEach(p=>scene.remove(p.group));pets=[];
- const equipped=[...state.pets].sort((a,b)=>b.power-a.power).slice(0,4);
+ const equipped=equippedPets();
  equipped.forEach((p,i)=>{
    const g=createAnimalPet(p);
    scene.add(g);pets.push({group:g,data:p,i});
  });
  petCountEl.textContent=equipped.length;
+ renderPetManager();
+}
+function renderPetManager(){
+ if(!petList)return;
+ petSummary.textContent=state.pets.length+' owned · '+state.equipped.length+'/4 equipped · '+equippedPets().reduce((s,p)=>s+(Number(p.power)||0),0)+' total power';
+ const sorted=[...state.pets].sort((a,b)=>b.power-a.power);
+ petList.innerHTML='';
+ for(const p of sorted){
+   const isOn=state.equipped.includes(p.id);
+   const card=document.createElement('div');card.className='petCard'+(isOn?' equipped':'');
+   const icon=document.createElement('div');icon.className='petIcon';icon.textContent=petEmoji(p.name);
+   const info=document.createElement('div');info.className='petInfo';
+   const nm=document.createElement('b');nm.textContent=p.name;
+   const pw=document.createElement('small');pw.textContent='Power '+p.power;
+   info.append(nm,pw);
+   const btn=document.createElement('button');btn.type='button';btn.className='petToggle';btn.dataset.petId=p.id;btn.textContent=isOn?'Unequip':'Equip';
+   card.append(icon,info,btn);petList.append(card);
+ }
+}
+function togglePet(id){
+ const i=state.equipped.indexOf(id);
+ if(i>=0)state.equipped.splice(i,1);
+ else{
+   if(state.equipped.length>=4){say('You can equip only 4 pets');return;}
+   if(state.pets.some(p=>p.id===id))state.equipped.push(id);
+ }
+ save();rebuildPets();
 }
 rebuildPets();
+petsBtn.addEventListener('click',()=>{petPanel.classList.remove('hidden');renderPetManager();});
+closePets.addEventListener('click',()=>petPanel.classList.add('hidden'));
+petList.addEventListener('click',e=>{const b=e.target.closest('[data-pet-id]');if(b)togglePet(b.dataset.petId);});
+autoEquip.addEventListener('click',()=>{state.equipped=[...state.pets].sort((a,b)=>b.power-a.power).slice(0,4).map(p=>p.id);save();rebuildPets();say('Best pets equipped');});
+unequipAll.addEventListener('click',()=>{state.equipped=[];save();rebuildPets();say('All pets unequipped');});
 
 const keys={};let camYaw=Math.PI,camPitch=.38,camDist=13,vertical=0,grounded=true,shiftLock=false,gait=0;
 let activeTarget=null,nearby=null,lastAttack=0,joyX=0,joyY=0;
@@ -208,6 +258,7 @@ function updateHUD(){
 }
 function jump(){if(grounded){vertical=8.2;grounded=false;}}
 addEventListener('keydown',e=>{
+ if(!petPanel.classList.contains('hidden')){if(e.code==='Escape')petPanel.classList.add('hidden');return;}
  keys[e.code]=true;
  if(e.code==='Space'){e.preventDefault();jump();}
  if(e.code==='ShiftLeft'){shiftLock=!shiftLock;say(shiftLock?'Shift Lock ON':'Shift Lock OFF');}
@@ -241,7 +292,7 @@ function interact(){
   const names=['Cat','Dog','Bunny','Fox','Dragon'];const roll=Math.random();
   const mult=roll>.96?2.4:roll>.82?1.65:roll>.5?1.25:1;
   const power=Math.round(cfg.power*mult),color=new THREE.Color().setHSL(Math.random(),.65,.58).getHex();
-  const pet={name:names[Math.floor(Math.random()*names.length)],power,color};state.pets.push(pet);rebuildPets();save();say('Hatched '+pet.name+' · '+power+' power!');
+  const pet={id:makePetId(),name:names[Math.floor(Math.random()*names.length)],power,color};state.pets.push(pet);save();rebuildPets();say('Hatched '+pet.name+' · '+power+' power!');
  }else{
   const g=nearby.data,cost=worlds[g.to].unlock;
   if(g.to<=state.unlocked){say(worlds[g.to].name+' already unlocked');return;}
@@ -378,7 +429,7 @@ function loop(now){
      dest=player.position.clone().add(back).add(side);
    }
    p.group.position.lerp(dest,1-Math.pow(.01,dt));p.group.position.y=.2+Math.sin(now*.004+i)*.22;
-   if(atk)p.group.lookAt(atk.x,p.group.position.y,atk.z);else p.group.rotation.y=player.rotation.y;
+   if(atk){p.group.lookAt(atk.x,p.group.position.y,atk.z);p.group.rotateY(Math.PI);}else p.group.rotation.y=player.rotation.y+Math.PI;
    const tail=p.group.children.find(c=>c.userData&&c.userData.tail);
    if(tail)tail.rotation.z=Math.sin(now*.012+i)*.28;
  });
