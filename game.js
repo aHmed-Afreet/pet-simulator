@@ -117,7 +117,34 @@ worlds.forEach((_,i)=>buildWorld(i));
 
 const player=new THREE.Group();scene.add(player);
 const torso=box(2.1,2.8,1.25,0x2f80ed);torso.position.y=3.7;player.add(torso);
-const head=new THREE.Mesh(new THREE.SphereGeometry(.82,16,12),new THREE.MeshStandardMaterial({color:0xf2c89c}));head.position.y=5.8;head.castShadow=true;player.add(head);
+
+const skin=new THREE.MeshStandardMaterial({color:0xf2c89c,roughness:.72});
+const faceDark=new THREE.MeshStandardMaterial({color:0x2b201a,roughness:.9});
+const hairMat=new THREE.MeshStandardMaterial({color:0x35251d,roughness:.92});
+
+const head=new THREE.Mesh(new THREE.SphereGeometry(.82,20,16),skin);
+head.position.y=5.8;head.castShadow=true;player.add(head);
+
+// The avatar's forward direction is local -Z. Put the face on that side.
+for(const x of[-.27,.27]){
+ const eye=new THREE.Mesh(new THREE.SphereGeometry(.075,10,8),new THREE.MeshBasicMaterial({color:0x111111}));
+ eye.position.set(x,5.94,-.76);player.add(eye);
+
+ const brow=box(.28,.055,.05,0x35251d);
+ brow.position.set(x,6.11,-.765);brow.rotation.z=x<0?-.08:.08;player.add(brow);
+}
+const nose=new THREE.Mesh(new THREE.SphereGeometry(.065,10,8),skin);
+nose.scale.set(.78,1.05,.9);nose.position.set(0,5.76,-.81);player.add(nose);
+
+const mouth=new THREE.Mesh(new THREE.BoxGeometry(.28,.055,.045),faceDark);
+mouth.position.set(0,5.57,-.79);mouth.rotation.z=.02;player.add(mouth);
+
+// Hair makes front/back even easier to read.
+const hairTop=new THREE.Mesh(new THREE.SphereGeometry(.84,20,12,0,Math.PI*2,0,Math.PI*.48),hairMat);
+hairTop.position.set(0,6.16,0);hairTop.rotation.x=.02;hairTop.castShadow=true;player.add(hairTop);
+const fringe1=box(.38,.22,.12,0x35251d);fringe1.position.set(-.24,6.22,-.72);fringe1.rotation.z=-.25;player.add(fringe1);
+const fringe2=box(.34,.20,.12,0x35251d);fringe2.position.set(.20,6.2,-.73);fringe2.rotation.z=.18;player.add(fringe2);
+
 const legL=box(.75,2.1,.85,0x27354e),legR=box(.75,2.1,.85,0x27354e);legL.position.set(-.55,1.45,0);legR.position.set(.55,1.45,0);player.add(legL,legR);
 const armL=box(.6,2.2,.65,0xf2c89c),armR=box(.6,2.2,.65,0xf2c89c);armL.position.set(-1.35,3.8,0);armR.position.set(1.35,3.8,0);player.add(armL,armR);
 player.position.set(0,0,7);
