@@ -283,6 +283,13 @@ let stickId=null;
 let stickCenter={x:0,y:0};
 function showStick(x,y){
  const size=150;
+ const pad=18;
+ const minX=pad+size/2;
+ const maxX=Math.min(260,innerWidth*.36)-pad-size/2;
+ const minY=innerHeight-Math.min(260,innerHeight*.38)+pad+size/2;
+ const maxY=innerHeight-pad-size/2;
+ x=Math.max(minX,Math.min(maxX,x));
+ y=Math.max(minY,Math.min(maxY,y));
  stickCenter={x,y};
  stick.style.left=(x-size/2)+'px';
  stick.style.top=(y-size/2)+'px';
@@ -299,7 +306,10 @@ function resetStick(e){
  stickId=null;joyX=joyY=0;knob.style.transform='translate(0,0)';stick.classList.remove('active');
 }
 function touchStartsJoystick(e){
- return e.pointerType==='touch'&&e.clientX<innerWidth*.46&&stickId===null;
+ const zoneWidth=Math.min(260,innerWidth*.36);
+ const zoneHeight=Math.min(260,innerHeight*.38);
+ const inBottomLeft=e.clientX<=zoneWidth&&e.clientY>=innerHeight-zoneHeight;
+ return e.pointerType==='touch'&&inBottomLeft&&stickId===null;
 }
 canvas.addEventListener('pointerdown',e=>{
  if(!touchStartsJoystick(e))return;
